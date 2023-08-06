@@ -8,7 +8,7 @@ status on Patreon via their email address.
 Some experience with Discord app development is assumed.
 
 1. Set up a new app on the [developer portal](https://discord.dev).
-2. Run the slash command creation script using `go run cmd/createcommands/main.go -token <bot token>`.
+2. Run the slash command creation script using `go run cmd/create-commands/main.go -token <bot token>`.
 3. Set up a [Patreon app](https://www.patreon.com/portal/registration/register-clients) and place the access token and
 refresh token in a `tokens.json` file. An example is provided in [`tokens.json.example`](/tokens.json.example).
 4. Run the main binary: there are 2 ways of doing this - either by building and running the main binary directly
