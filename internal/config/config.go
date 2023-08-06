@@ -15,9 +15,10 @@ type Config struct {
 	} `envPrefix:"DISCORD_"`
 
 	Patreon struct {
-		ClientId     string `env:"CLIENT_ID,required"`
-		ClientSecret string `env:"CLIENT_SECRET,required"`
-		CampaignId   int    `env:"CAMPAIGN_ID,required"`
+		ClientId       string `env:"CLIENT_ID,required"`
+		ClientSecret   string `env:"CLIENT_SECRET,required"`
+		CampaignId     int    `env:"CAMPAIGN_ID,required"`
+		TokensFilePath string `env:"TOKENS_FILE_PATH" envDefault:"tokens.json"`
 	} `envPrefix:"PATREON_"`
 }
 

@@ -13,8 +13,6 @@ import (
 	"time"
 )
 
-const tokensFile = "tokens.json"
-
 func main() {
 	conf, err := config.LoadConfig()
 	if err != nil {
@@ -60,7 +58,7 @@ func main() {
 		panic(err)
 	}
 
-	tokens, err := readTokens()
+	tokens, err := readTokens(conf.Patreon.TokensFilePath)
 	if err != nil {
 		panic(err)
 	}
@@ -72,7 +70,7 @@ func main() {
 	)
 
 	pledgeCh := make(chan map[string]patreon.Patron)
-	go startPatreonLoop(context.Background(), logger, patreonClient, pledgeCh)
+	go startPatreonLoop(context.Background(), conf, logger, patreonClient, pledgeCh)
 
 	server := server.NewServer(conf, logger.With(zap.String("component", "server")))
 
@@ -89,18 +87,20 @@ func main() {
 
 func startPatreonLoop(
 	ctx context.Context,
+	config config.Config,
 	logger *zap.Logger,
 	patreonClient *patreon.Client,
 	ch chan map[string]patreon.Patron,
 ) {
 	for {
-		fetchPledges(ctx, logger, patreonClient, ch)
+		fetchPledges(ctx, config, logger, patreonClient, ch)
 		time.Sleep(time.Minute)
 	}
 }
 
 func fetchPledges(
 	ctx context.Context,
+	config config.Config,
 	logger *zap.Logger,
 	patreonClient *patreon.Client,
 	ch chan map[string]patreon.Patron,
@@ -127,7 +127,7 @@ func fetchPledges(
 			logger.Error("Failed to refresh token", zap.Error(err))
 		} else {
 			logger.Info("Tokens refreshed successfully", zap.Time("expires_at", tokens.ExpiresAt))
-			if err := writeTokens(tokens); err != nil {
+			if err := writeTokens(config.Patreon.TokensFilePath, tokens); err != nil {
 				logger.Error("Failed to write tokens to disk", zap.Error(err))
 			} else {
 				logger.Info("Tokens written to disk")
@@ -149,17 +149,17 @@ func fetchPledges(
 	ch <- pledges
 }
 
-func writeTokens(tokens patreon.Tokens) error {
+func writeTokens(path string, tokens patreon.Tokens) error {
 	marshalled, err := json.Marshal(tokens)
 	if err != nil {
 		return err
 	}
 
-	return os.WriteFile(tokensFile, marshalled, 0600)
+	return os.WriteFile(path, marshalled, 0600)
 }
 
-func readTokens() (patreon.Tokens, error) {
-	data, err := os.ReadFile(tokensFile)
+func readTokens(path string) (patreon.Tokens, error) {
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return patreon.Tokens{}, err
 	}
