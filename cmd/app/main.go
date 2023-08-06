@@ -29,6 +29,8 @@ func main() {
 			panic(err)
 		}
 
+		defer sentry.Flush(time.Second * 2)
+
 		logger, err = zap.NewProduction(zap.WrapCore(func(core zapcore.Core) zapcore.Core {
 			return zapcore.RegisterHooks(core, func(entry zapcore.Entry) error {
 				if entry.Level == zapcore.ErrorLevel {
