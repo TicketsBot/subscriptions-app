@@ -51,15 +51,15 @@ func (c *Client) FetchPledges(ctx context.Context) (map[string]Patron, error) {
 			}
 
 			// Parse tiers
-			var tiers []Tier
+			var tiers []uint64
 			for _, tier := range member.Relationships.CurrentlyEntitledTiers.Data {
-				internalTier, ok := GetTierFromId(tier.TierId)
-				if !ok {
+				// Check if tier is known
+				if _, ok := c.config.Tiers[tier.TierId]; !ok {
 					c.logger.Warn("unknown tier", zap.Uint64("tier_id", tier.TierId))
 					continue
 				}
 
-				tiers = append(tiers, internalTier)
+				tiers = append(tiers, tier.TierId)
 			}
 
 			// Parse "included" metadata

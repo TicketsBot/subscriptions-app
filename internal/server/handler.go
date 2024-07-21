@@ -93,7 +93,12 @@ func handleCommand(s *Server, data interaction.ApplicationCommandInteraction) in
 		if ok {
 			tiers := make([]string, len(patron.Tiers))
 			for i, tier := range patron.Tiers {
-				tiers[i] = tier.String()
+				tierName, ok := s.config.Tiers[tier]
+				if !ok {
+					tierName = fmt.Sprintf("Unknown (ID: %d)", tier)
+				}
+
+				tiers[i] = tierName
 			}
 
 			discord := "Not linked"

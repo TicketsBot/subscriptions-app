@@ -21,35 +21,39 @@ func main() {
 
 	var logger *zap.Logger
 	if conf.ProductionMode {
-		if err := sentry.Init(sentry.ClientOptions{
-			Dsn: conf.SentryDsn,
-		}); err != nil {
-			panic(err)
+		if conf.SentryDsn != nil {
+			if err := sentry.Init(sentry.ClientOptions{
+				Dsn: *conf.SentryDsn,
+			}); err != nil {
+				panic(err)
+			}
+
+			defer sentry.Flush(time.Second * 2)
+
+			logger, err = zap.NewProduction(zap.WrapCore(func(core zapcore.Core) zapcore.Core {
+				return zapcore.RegisterHooks(core, func(entry zapcore.Entry) error {
+					if entry.Level == zapcore.ErrorLevel {
+						hostname, _ := os.Hostname()
+
+						sentry.CaptureEvent(&sentry.Event{
+							Extra: map[string]any{
+								"caller": entry.Caller.String(),
+								"stack":  entry.Stack,
+							},
+							Level:      sentry.LevelError,
+							Message:    entry.Message,
+							ServerName: hostname,
+							Timestamp:  entry.Time,
+							Logger:     entry.LoggerName,
+						})
+					}
+
+					return nil
+				})
+			}))
+		} else {
+			logger, err = zap.NewProduction()
 		}
-
-		defer sentry.Flush(time.Second * 2)
-
-		logger, err = zap.NewProduction(zap.WrapCore(func(core zapcore.Core) zapcore.Core {
-			return zapcore.RegisterHooks(core, func(entry zapcore.Entry) error {
-				if entry.Level == zapcore.ErrorLevel {
-					hostname, _ := os.Hostname()
-
-					sentry.CaptureEvent(&sentry.Event{
-						Extra: map[string]any{
-							"caller": entry.Caller.String(),
-							"stack":  entry.Stack,
-						},
-						Level:      sentry.LevelError,
-						Message:    entry.Message,
-						ServerName: hostname,
-						Timestamp:  entry.Time,
-						Logger:     entry.LoggerName,
-					})
-				}
-
-				return nil
-			})
-		}))
 	} else {
 		logger, err = zap.NewDevelopment()
 	}

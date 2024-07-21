@@ -13,7 +13,11 @@ Some experience with Discord app development is assumed.
 refresh token in a `tokens.json` file. An example is provided in [`tokens.json.example`](/tokens.json.example).
 4. Run the main binary: there are 2 ways of doing this - either by building and running the main binary directly
    (`go build cmd/app/main.go`), or via Docker (recommended). If running the binary directly, see the
-   [envvars.md](/envvars.md) file for a list of environment variables that need to be set.
+   [envvars.md](/envvars.md) file for a list of environment variables that need to be set. 
+
+
+   Alternatively, a `config.json` file can be used to configure the application. See the
+   [config.json.example](/config.json.example) file for an example.
 
 Note, anyone is able to use the command, as long as the command is run in a guild listed in the `DISCORD_ALLOWED_GUILDS`
 environment variable. You should use Discord's built-in application command permission system to restrict usage to

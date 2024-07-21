@@ -6,7 +6,7 @@ type (
 	Patron struct {
 		Attributes
 		Id        uint64
-		Tiers     []Tier
+		Tiers     []uint64
 		DiscordId *uint64
 	}
 

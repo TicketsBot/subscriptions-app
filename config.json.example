@@ -1,0 +1,19 @@
+{
+  "server_address": "0.0.0.0:8080",
+  "production_mode": true,
+  "sentry_dsn": null,
+  "discord": {
+    "public_key": "",
+    "allowed_guilds": [12345678901234567]
+  },
+  "patreon": {
+    "client_id": "",
+    "client_secret": "",
+    "campaign_id": 1111111,
+    "tokens_file_path": "tokens.json"
+  },
+  "tiers": {
+    "1234": "Super",
+    "5678": "Ultra"
+  }
+}

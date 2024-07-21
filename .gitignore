@@ -2,3 +2,4 @@
 *.iml
 .env
 tokens.json
+config.json

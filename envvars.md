@@ -1,8 +1,9 @@
-- DISCORD_PUBLIC_KEY
-- DISCORD_ALLOWED_GUILDS
-- PATREON_CLIENT_ID
-- PATREON_CLIENT_SECRET
-- PATREON_CAMPAIN_ID
-- SERVER_ADDR
-- SENTRY_DSN
-- PRODUCTION_MODE
+- **DISCORD_PUBLIC_KEY**: The public key for your Discord application to verify interactions.
+- **DISCORD_ALLOWED_GUILDS**: A comma-separated list of Discord guild IDs that commands will be accepted in.
+- **PATREON_CLIENT_ID**: The client ID string for your Patreon app.
+- **PATREON_CLIENT_SECRET**: The client secret string for your Patreon app.
+- **PATREON_CAMPAIGN_ID**: The ID of the Patreon campaign to use for fetching pledges.
+- **SERVER_ADDR**: The address to bind the web server for HTTP interactions to (e.g. `:8080).
+- **SENTRY_DSN**: Optional, used for error reporting.
+- **PRODUCTION_MODE**: Currently only used to determine the log format.
+- **TIERS**: A comma-separated list of Patreon tier IDs and names, in the format `1234:Name,5678:Name`, and so on.
