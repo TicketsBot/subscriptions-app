@@ -62,16 +62,19 @@ func main() {
 		panic(err)
 	}
 
-	tokens, err := readTokens(conf.Patreon.TokensFilePath)
-	if err != nil {
-		panic(err)
+	patreonClient := patreon.NewClient(conf, logger.With(zap.String("component", "patreon_client")))
+	for {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+		_, err := patreonClient.GrantCredentials(ctx)
+		cancel()
+		if err == nil {
+			logger.Info("Granted credentials successfully")
+			break
+		} else {
+			logger.Error("Failed to grant credentials, retrying in 10s", zap.Error(err))
+			time.Sleep(time.Second * 10)
+		}
 	}
-
-	patreonClient := patreon.NewClient(
-		conf,
-		logger.With(zap.String("component", "patreon_client")),
-		tokens,
-	)
 
 	pledgeCh := make(chan map[string]patreon.Patron)
 	go startPatreonLoop(context.Background(), conf, logger, patreonClient, pledgeCh)
@@ -131,11 +134,6 @@ func fetchPledges(
 			logger.Error("Failed to refresh token", zap.Error(err))
 		} else {
 			logger.Info("Tokens refreshed successfully", zap.Time("expires_at", tokens.ExpiresAt))
-			if err := writeTokens(config.Patreon.TokensFilePath, tokens); err != nil {
-				logger.Error("Failed to write tokens to disk", zap.Error(err))
-			} else {
-				logger.Info("Tokens written to disk")
-			}
 		}
 
 		cancel()

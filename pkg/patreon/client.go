@@ -6,25 +6,32 @@ import (
 	"fmt"
 	"github.com/TicketsBot/subscriptions-app/internal/config"
 	"go.uber.org/zap"
+	"golang.org/x/time/rate"
+	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 )
 
 type Client struct {
-	httpClient *http.Client
-	config     config.Config
-	logger     *zap.Logger
+	httpClient  *http.Client
+	config      config.Config
+	logger      *zap.Logger
+	ratelimiter *rate.Limiter
 
 	Tokens Tokens
 }
 
-func NewClient(config config.Config, logger *zap.Logger, tokens Tokens) *Client {
+const UserAgent = "ticketsbot.net/subscriptions-app (https://github.com/TicketsBot/subscriptions-app)"
+
+func NewClient(config config.Config, logger *zap.Logger) *Client {
 	return &Client{
-		httpClient: http.DefaultClient,
-		config:     config,
-		logger:     logger,
-		Tokens:     tokens,
+		httpClient:  http.DefaultClient,
+		config:      config,
+		logger:      logger,
+		ratelimiter: rate.NewLimiter(rate.Limit(config.Patreon.RequestsPerMinute/60.0), config.Patreon.RequestsPerMinute),
 	}
 }
 
@@ -112,6 +119,11 @@ func (c *Client) FetchPage(ctx context.Context, url string) (PledgeResponse, err
 	}
 
 	req.Header.Set("Authorization", "Bearer "+c.Tokens.AccessToken)
+	req.Header.Set("User-Agent", UserAgent)
+
+	if err := c.ratelimiter.Wait(ctx); err != nil {
+		return PledgeResponse{}, err
+	}
 
 	res, err := c.httpClient.Do(req)
 	if err != nil {
@@ -150,6 +162,72 @@ func (c *Client) FetchPage(ctx context.Context, url string) (PledgeResponse, err
 	return body, nil
 }
 
+func (c *Client) GrantCredentials(ctx context.Context) (Tokens, error) {
+	c.logger.Info("Doing client_credentials grant")
+
+	uri := "https://www.patreon.com/api/oauth2/token"
+
+	form := &url.Values{}
+	form.Add("grant_type", "client_credentials")
+	form.Add("client_id", c.config.Patreon.ClientId)
+	form.Add("client_secret", c.config.Patreon.ClientSecret)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, uri, strings.NewReader(form.Encode()))
+	if err != nil {
+		return Tokens{}, err
+	}
+
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Add("User-Agent", UserAgent)
+
+	if err := c.ratelimiter.Wait(ctx); err != nil {
+		return Tokens{}, err
+	}
+
+	res, err := c.httpClient.Do(req)
+	if err != nil {
+		return Tokens{}, err
+	}
+
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		body, err := io.ReadAll(res.Body)
+		if err != nil {
+			c.logger.Error(
+				"error reading body during token refresh",
+				zap.Int("status_code", res.StatusCode),
+				zap.Error(err),
+			)
+			return Tokens{}, err
+		}
+
+		c.logger.Error(
+			"Token grant returned non-OK status code",
+			zap.Int("status_code", res.StatusCode),
+			zap.String("body", string(body)),
+		)
+
+		return Tokens{}, fmt.Errorf("token grant returned %d status code", res.StatusCode)
+	}
+
+	var body RefreshResponse
+	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+		return Tokens{}, err
+	}
+
+	tokens := Tokens{
+		AccessToken:  body.AccessToken,
+		RefreshToken: body.RefreshToken,
+		ExpiresAt:    time.Now().Add(time.Duration(body.ExpiresIn) * time.Second),
+	}
+
+	c.logger.Info("Token grant successful", zap.Time("expires_at", tokens.ExpiresAt))
+
+	c.Tokens = tokens
+	return tokens, nil
+}
+
 func (c *Client) DoRefresh(ctx context.Context) (Tokens, error) {
 	c.logger.Info("Doing token refresh")
 
@@ -169,6 +247,12 @@ func (c *Client) DoRefresh(ctx context.Context) (Tokens, error) {
 		return Tokens{}, err
 	}
 
+	req.Header.Add("User-Agent", UserAgent)
+
+	if err := c.ratelimiter.Wait(ctx); err != nil {
+		return Tokens{}, err
+	}
+
 	res, err := c.httpClient.Do(req)
 	if err != nil {
 		return Tokens{}, err
@@ -177,7 +261,7 @@ func (c *Client) DoRefresh(ctx context.Context) (Tokens, error) {
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		body, err := ioutil.ReadAll(res.Body)
+		body, err := io.ReadAll(res.Body)
 		if err != nil {
 			c.logger.Error(
 				"error reading body during token refresh",

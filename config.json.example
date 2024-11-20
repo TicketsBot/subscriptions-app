@@ -9,8 +9,7 @@
   "patreon": {
     "client_id": "",
     "client_secret": "",
-    "campaign_id": 1111111,
-    "tokens_file_path": "tokens.json"
+    "campaign_id": 1111111
   },
   "tiers": {
     "1234": "Super",

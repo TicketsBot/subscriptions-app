@@ -18,10 +18,10 @@ type Config struct {
 	} `envPrefix:"DISCORD_" json:"discord"`
 
 	Patreon struct {
-		ClientId       string `env:"CLIENT_ID,required" json:"client_id"`
-		ClientSecret   string `env:"CLIENT_SECRET,required" json:"client_secret"`
-		CampaignId     int    `env:"CAMPAIGN_ID,required" json:"campaign_id"`
-		TokensFilePath string `env:"TOKENS_FILE_PATH" envDefault:"tokens.json" json:"tokens_file_path"`
+		ClientId          string `env:"CLIENT_ID,required" json:"client_id"`
+		ClientSecret      string `env:"CLIENT_SECRET,required" json:"client_secret"`
+		CampaignId        int    `env:"CAMPAIGN_ID,required" json:"campaign_id"`
+		RequestsPerMinute int    `env:"REQUESTS_PER_MINUTE" envDefault:"100" json:"requests_per_minute"`
 	} `envPrefix:"PATREON_" json:"patreon"`
 
 	Tiers map[uint64]string `env:"TIERS" json:"tiers"`
@@ -37,10 +37,6 @@ func LoadConfig() (Config, error) {
 
 		if err := json.NewDecoder(f).Decode(&conf); err != nil {
 			return Config{}, errors.Wrap(err, "failed to decode config.json")
-		}
-
-		if conf.Patreon.TokensFilePath == "" {
-			conf.Patreon.TokensFilePath = "tokens.json"
 		}
 	} else if errors.Is(err, os.ErrNotExist) { // If config.json does not exist, load from envvars
 		if err := env.Parse(&conf); err != nil {

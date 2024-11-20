@@ -9,8 +9,7 @@ Some experience with Discord app development is assumed.
 
 1. Set up a new app on the [developer portal](https://discord.dev).
 2. Run the slash command creation script using `go run cmd/createcommands/main.go -token <bot token>`.
-3. Set up a [Patreon app](https://www.patreon.com/portal/registration/register-clients) and place the access token and
-refresh token in a `tokens.json` file. An example is provided in [`tokens.json.example`](/tokens.json.example).
+3. Set up a [Patreon app](https://www.patreon.com/portal/registration/register-clients).
 4. Run the main binary: there are 2 ways of doing this - either by building and running the main binary directly
    (`go build cmd/app/main.go`), or via Docker (recommended). If running the binary directly, see the
    [envvars.md](/envvars.md) file for a list of environment variables that need to be set. 
@@ -30,12 +29,11 @@ find the latest image, and pull it:
 docker pull ghcr.io/ticketsbot/subscriptions-app:COMMIT_HASH_HERE
 ```
 
-2. Copy the example `.env.example` file to `.env` and fill in the values. Ensure that you have also created a
-`tokens.json` file as described in the [Usage](#usage) section.
+2. Copy the example `.env.example` file to `.env` and fill in the values.
 
 3. Run the Docker container!
 ```shell
-docker run -d -v $(pwd)/tokens.json:/data/tokens.json \
+docker run -d \
     --env-file=.env \
     -p 8080:8080 \
     --restart=always \
