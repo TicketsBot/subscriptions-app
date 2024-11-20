@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/TicketsBot/subscriptions-app/internal/config"
 	"github.com/TicketsBot/subscriptions-app/internal/server"
 	"github.com/TicketsBot/subscriptions-app/pkg/patreon"
@@ -100,14 +99,13 @@ func startPatreonLoop(
 	ch chan map[string]patreon.Patron,
 ) {
 	for {
-		fetchPledges(ctx, config, logger, patreonClient, ch)
+		fetchPledges(ctx, logger, patreonClient, ch)
 		time.Sleep(time.Minute)
 	}
 }
 
 func fetchPledges(
 	ctx context.Context,
-	config config.Config,
 	logger *zap.Logger,
 	patreonClient *patreon.Client,
 	ch chan map[string]patreon.Patron,
@@ -149,31 +147,4 @@ func fetchPledges(
 	}
 
 	ch <- pledges
-}
-
-func writeTokens(path string, tokens patreon.Tokens) error {
-	marshalled, err := json.Marshal(tokens)
-	if err != nil {
-		return err
-	}
-
-	return os.WriteFile(path, marshalled, 0600)
-}
-
-func readTokens(path string) (patreon.Tokens, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return patreon.Tokens{}, err
-	}
-
-	var tokens patreon.Tokens
-	if err := json.Unmarshal(data, &tokens); err != nil {
-		return patreon.Tokens{}, err
-	}
-
-	if tokens.ExpiresAt.IsZero() {
-		tokens.ExpiresAt = time.Now().Add(time.Hour) // Attempt a refresh, likely this is the first run
-	}
-
-	return tokens, nil
 }
