@@ -28,10 +28,13 @@ const UserAgent = "ticketsbot.net/subscriptions-app (https://github.com/TicketsB
 
 func NewClient(config config.Config, logger *zap.Logger) *Client {
 	return &Client{
-		httpClient:  http.DefaultClient,
-		config:      config,
-		logger:      logger,
-		ratelimiter: rate.NewLimiter(rate.Limit(config.Patreon.RequestsPerMinute/60.0), config.Patreon.RequestsPerMinute),
+		httpClient: http.DefaultClient,
+		config:     config,
+		logger:     logger,
+		ratelimiter: rate.NewLimiter(
+			rate.Every(time.Minute/time.Duration(config.Patreon.RequestsPerMinute)),
+			config.Patreon.RequestsPerMinute,
+		),
 	}
 }
 
