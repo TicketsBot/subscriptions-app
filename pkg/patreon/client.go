@@ -44,7 +44,7 @@ func (c *Client) FetchPledges(ctx context.Context) (map[string]Patron, error) {
 	// Email -> Data
 	data := make(map[string]Patron)
 	for {
-		res, err := c.FetchPageWithTimeout(ctx, 15*time.Second, url)
+		res, err := c.FetchPageWithTimeout(ctx, 10*time.Minute, url)
 		if err != nil {
 			return nil, err
 		}

@@ -76,7 +76,7 @@ func main() {
 	}
 
 	pledgeCh := make(chan map[string]patreon.Patron)
-	go startPatreonLoop(context.Background(), conf, logger, patreonClient, pledgeCh)
+	go startPatreonLoop(context.Background(), logger, patreonClient, pledgeCh)
 
 	server := server.NewServer(conf, logger.With(zap.String("component", "server")))
 
@@ -91,13 +91,7 @@ func main() {
 	}
 }
 
-func startPatreonLoop(
-	ctx context.Context,
-	config config.Config,
-	logger *zap.Logger,
-	patreonClient *patreon.Client,
-	ch chan map[string]patreon.Patron,
-) {
+func startPatreonLoop(ctx context.Context, logger *zap.Logger, patreonClient *patreon.Client, ch chan map[string]patreon.Patron) {
 	for {
 		fetchPledges(ctx, logger, patreonClient, ch)
 		time.Sleep(time.Minute)
